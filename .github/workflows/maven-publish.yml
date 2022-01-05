@@ -1,0 +1,39 @@
+# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
+# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
+
+name: Publish Snapshot to Maven Central
+
+on:
+  push:
+    branches: [ master ]
+    #TODO: abort if non snapshot version is pushed to prevent accidential releases?!
+  # TODO: guard against accidential releases due to non-SNAPSHOT version submitted!
+  #Trigger release workflow manually and create release in github 
+  #or make it the other way round and trigger a realese deployment to maven central as soon as a release is created in GH. But to create a release in GH the commit must be ready.   
+jobs:
+  build-master-and-publish-to-maven-central:
+    runs-on: ubuntu-latest
+    steps:
+    
+    - uses: actions/checkout@v2
+
+    - name: Set up Maven Central Repository
+      uses: actions/setup-java@v1
+      with:
+        java-version: '11'
+        distribution: 'adopt' #TODO: do we need to specifiy this?
+        server-id: ossrh
+        server-username: MAVEN_USERNAME
+        server-password: MAVEN_PASSWORD
+        gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+        gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
+    - name: Build with Maven
+      run: mvn -f symja_android_library/pom.xml -B clean verify
+
+    - name: Publish to Maven Central
+      run: mvn -f symja_android_library/pom.xml -B -Ppublish-to-maven-central -DskipTests deploy
+      env:
+        MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+        MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+        MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
