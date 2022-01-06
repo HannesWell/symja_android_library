@@ -1,0 +1,77 @@
+# This workflow will build and a release Java project to the Maven-Central repository
+
+name: Release to Maven-Central
+
+on:
+  workflow_dispatch
+
+jobs:
+  maven-perform-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Java for deployment
+      uses: ./.github/actions/setup-java-for-deployment
+      with:
+        gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+    
+    - name: Configure git user
+      run: |
+       git config user.email "actions-bot@github.com"
+       git config user.name "GitHub Actions (triggered by ${{ github.actor }})"
+
+    # Perform the usual maven-release-plugin procude, but prevent the release commits
+    # and tag from beeing pushed to the master immeadiatly. They are only pushed after
+    # the release is performed successfully. This avoids to have the release
+    # commits on the master in case release publication fails in the last step).
+
+    - run: mvn -f symja_android_library -B release:clean release:prepare -DpushChanges=false
+
+    - name: Read release version
+      run: echo "release_version=$(git describe --abbrev=0)" >> $GITHUB_ENV
+      # creates environment variable named release_version whoose value is the release tag's  name
+
+    - name: Push ${{ env.release_version }} release commits to draft branch
+      # Save the commits from which the release is build in the main repo
+      # but only on a temporary draft branch. This way the release commits 
+      # are not on the master in case performing/publishing the release fails
+      run: git push origin HEAD:draft_${{ env.release_version }}
+    
+    - run: mvn -f symja_android_library -B release:perform -DlocalCheckout=true
+      # Deployment of all modules is deferred to the last module by nexus-staging-maven-plugin
+      env:
+        MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+        MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+        MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+
+    - name: Publish release commits and tag to master
+      run: | # the release was published successfully
+        git push origin HEAD:master		# push release commits to master 
+        git push origin refs/tags/${{ env.release_version }}	# push release tag
+        git push origin --delete draft_${{ env.release_version }}	# delete draft branch
+   
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.release_version }}
+        release_name: ${{ env.release_version }}
+        body: |
+          Grab the new version from Maven central by using the following deps:
+          ```
+          <dependencies>
+          	<dependency>
+          		<groupId>org.matheclipse</groupId>
+          		<artifactId>matheclipse</artifactId>
+          		<version>${{ env.release_version }}</version>
+          	</dependency>
+          </dependencies>
+          ```
+        draft: false
+        prerelease: false
