@@ -41,11 +41,14 @@
 		Must not be last to not break deployment entirely.
 		See description of ''skipNexusStagingDeployMojo' in 
 		https://github.com/sonatype/nexus-maven-plugins/blob/master/staging/maven-plugin/README.md#plugin-flags-->
-		<module>matheclipse-beakerx</module>
+		<!--	
+		<module>matheclipse-beakerx</module> 
 		<module>matheclipse-jar</module>
 		<module>tools</module>
+		-->
 
 		<!-- Deployed modules -->
+		<!-- 
 		<module>matheclipse-external</module>
 		<module>matheclipse-parser</module>
 		<module>matheclipse-core</module>
@@ -53,15 +56,16 @@
 		<module>matheclipse-api</module>
 		<module>matheclipse-io</module>
 		<module>matheclipse-discord</module>
+		-->
 		<module>matheclipse-logging</module>
-		<module>matheclipse-script</module>
+		<!-- <module>matheclipse-script</module> -->
 
 	</modules>
 
 	<scm>
-		<connection>scm:git:git://github.com/axkr/symja_android_library.git</connection>
-		<developerConnection>scm:git:git@github.com:axkr/symja_android_library.git</developerConnection>
-		<url>https://github.com/axkr/symja_android_library.git</url>
+		<connection>scm:git:git://github.com/HannesWell/symja_android_library.git</connection>
+		<developerConnection>scm:git:git@github.com:HannesWell/symja_android_library.git</developerConnection>
+		<url>https://github.com/HannesWell/symja_android_library.git</url>
 		<tag>HEAD</tag>
 	</scm>
 
@@ -72,12 +76,14 @@
 
 	<distributionManagement>
 		<repository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+			<id>github</id>
+			<name>GitHub HannesWell Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/HannesWell/symja_android_library</url>
 		</repository>
 		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<id>github</id>
+			<name>GitHub HannesWell Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/HannesWell/symja_android_library</url>
 		</snapshotRepository>
 	</distributionManagement>
 
@@ -514,6 +520,7 @@ checkModificationExcludes>
 					<configuration>
 						<serverId>ossrh</serverId>
 						<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+						<skipStaging>true</skipStaging>
 					</configuration>
 				</plugin>
 
