@@ -62,6 +62,7 @@
 
 	</modules>
 
+
 	<scm>
 		<connection>scm:git:git://github.com/HannesWell/symja_android_library.git</connection>
 		<developerConnection>scm:git:git@github.com:HannesWell/symja_android_library.git</developerConnection>
