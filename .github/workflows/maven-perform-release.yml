@@ -12,7 +12,7 @@ jobs:
   maven-perform-release:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/migrate-to-central-portal'
 
     steps:
     - uses: actions/checkout@v6
@@ -51,13 +51,14 @@ jobs:
       id: "update-changelog"
       with:
         latest-version: ${{ env.release_tag }}
+        #release-notes: 'A new version of Symja'
 
     - name: Amend release commit and tag and cherry-pick preparation commit
       run: |
         git add CHANGELOG.md
         git commit --amend --no-edit
         git tag -a ${{ env.release_tag }} -f -m "Symja ${{ env.release_version }}" # reset tag to amended release commit
-        git cherry-pick master
+        git cherry-pick migrate-to-central-portal
 
     - name: Push ${{ env.release_version }} release commits to draft branch
       # Save the commits from which the release is build in the main repository
@@ -73,34 +74,13 @@ jobs:
         MAVEN_PASSWORD: ${{ secrets.CENTRAL_PORTAL_TOKEN_PASSWORD }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
-    - name: Publish release commits and tag to master
-      run: | # the release was published successfully
-        git push origin HEAD:master		# push release commits to master 
-        git push origin refs/tags/${{ env.release_tag }}	# push release tag
-        git push origin --delete draft_${{ env.release_version }}	# delete draft branch
-
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
+    - uses: actions/upload-artifact@v4
       with:
-        name: Symja ${{ env.release_version }}
-        tag_name: ${{ env.release_tag }}
-        draft: false
-        prerelease: false
-        files: ./symja_android_library/target/checkout/symja_android_library/target/central-staging/**/*.jar
-        body: |
-          We are pleased to announce the release of Symja ${{ env.release_version }}.
-          
-          This release is available on Maven central using the following coordinates:
-          ```
-          <dependency>
-          	<groupId>org.matheclipse</groupId>
-          	<artifactId>matheclipse-core</artifactId>
-          	<version>${{ env.release_version }}</version>
-          </dependency>
-          ```
-          You can obtain the other Symja-modules using their corresponding `artifactId`.
-          
-          See the [changelog for Symja ${{ env.release_version }}](CHANGELOG.md${{ steps.update-changelog.outputs.release_url_fragment }}) for all noteworthy changes.
-          The exact changes are: ${{ steps.update-changelog.outputs.release_compare_url }}
-          
-          Thanks to everyone who contributed to this release!
+        name: Release assest
+        path: './symja_android_library/target/checkout/symja_android_library/target/central-staging/**/*.jar'
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: Target Content
+        path: '**/target/*'
+
