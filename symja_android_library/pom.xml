@@ -734,6 +734,7 @@
 								<goals>
 									<goal>sign</goal>
 								</goals>
+								<phase>none</phase>
 							</execution>
 						</executions>
 					</plugin>
